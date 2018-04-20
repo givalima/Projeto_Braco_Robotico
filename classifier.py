@@ -12,6 +12,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import Flatten
 from keras.layers import Dense
 from keras.preprocessing.image import ImageDataGenerator
+from keras.models import load_model
 
 import socket
 import struct
@@ -67,6 +68,9 @@ classifier.fit_generator(training_set,
                          validation_steps=test_set.samples/32)
 score = classifier.predict_generator(test_set)
 print(score.shape) 
+
+classifier.save("parametros")
+print("Parametros atualizados")
 
 
 # %%%%%%  MATRIZ DE CONFUSÃO  %%%%%%%
