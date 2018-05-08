@@ -17,7 +17,7 @@
 static const float g_JointThickness = 3.0f;
 static const float g_TrackedBoneThickness = 6.0f;
 static const float g_InferredBoneThickness = 1.0f;
-int count = 1;
+int cont = 0;
 
 /// <summary>
 /// Entry point for the application
@@ -678,21 +678,16 @@ void CSkeletonBasics::ProcessSkeleton()
 					}
 				}
 
-				count++;
-				if (count>500)
-				{
-					exit(0);
-				}
-
-				vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50});
+				vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50}, cont);
+				cont++;
 				std::ofstream file;
 				file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
 				file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] ";
 				file.close();
 
-				//writePPMFloat(rgbrunfloat, std::string("imagens/profundidade/profundidade") + std::to_string(count+500) + std::string(".ppm"), cDepthWidth, cDepthHeight);
-				//writePPMFloat(img_segmentada, std::string("imagens/segmentada/segmentada") + std::to_string(count+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
-				//writePPMFloat(img_binarizada, std::string("imagens/binarizada/binarizada") + std::to_string(count+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
+				//writePPMFloat(rgbrunfloat, std::string("imagens/profundidade/profundidade") + std::to_string(cont+500) + std::string(".ppm"), cDepthWidth, cDepthHeight);
+				//writePPMFloat(img_segmentada, std::string("imagens/segmentada/segmentada") + std::to_string(cont+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
+				//writePPMFloat(img_binarizada, std::string("imagens/binarizada/binarizada") + std::to_string(cont+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
 				
 				//ProcessColor(count+500);
 
@@ -701,6 +696,11 @@ void CSkeletonBasics::ProcessSkeleton()
 
 				//delete[] img_cortada;
 				//delete[] img_binarizada;
+
+				if (cont > 9999)
+				{
+					exit(0);
+				}
 			}
 		}
 		
@@ -760,10 +760,11 @@ ReleaseFrame:
 
 ////////////////////////////////////// CLASSIFICADOR ////////////////////////////////////////////////
 
-std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const std::vector<int>& im, cv::Size imSize)
+std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const std::vector<int>& im, cv::Size imSize, int cont)
 {
 	size_t reciLen;
 	char predictBuff[50000];
+	unsigned i;
 
 	for (int y = 0; y < imSize.height; ++y)
 	{
@@ -790,19 +791,116 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 		float a = std::stof(str.substr(i * 9, 7));
 		resultVec.push_back(a);
 	}
-	
-	return resultVec;
 
-	if (resultVec[0] == 1)
+/*
+	if (cont < 5)
 	{
-		m_pRenderTarget->DrawLine(m_Points[NUI_SKELETON_POSITION_HIP_LEFT], m_Points[NUI_SKELETON_POSITION_KNEE_LEFT], m_pBrushBoneInferred, g_InferredBoneThickness);
-		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow, 1.0f), &m_pBrushJointInferred);
+		if (resultVec[0] > 0.5)
+		{
+			color_vector[cont] = 1; //Mão Aberta
+		}
+		else
+		{
+			color_vector[cont] = 0; //Mão Aberta
+		}
 	}
 	else
 	{
-		m_pRenderTarget->DrawLine(m_Points[NUI_SKELETON_POSITION_HIP_LEFT], m_Points[NUI_SKELETON_POSITION_KNEE_LEFT], m_pBrushBoneInferred, g_InferredBoneThickness);
-		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow, 1.0f), &m_pBrushJointInferred);
+		for (i = 0; i < 3; ++i)
+		{
+			color_vector[i] = color_vector[i + 1];
+		}
+		if (resultVec[0] > 0.5)
+		{
+			color_vector[4] = 1; //Mão Aberta
+		}
+		else
+		{
+			color_vector[4] = 0; //Mão Aberta
+		}
 	}
+	
+	*/
+
+	p[0] = { 0.0, 620.0 }; //Mão Aberta
+	q[0] = { 0.0, 620.0 }; //Mão Fechada
+
+	char x_ped = 10.0;
+	char y_ped = 50.0;
+
+	if (cont < 11)
+	{
+			lastResultVec[cont][0] = resultVec[0];
+			lastResultVec[cont][1] = resultVec[1];
+	}
+	else
+	{
+		for (i = 0; i < 10; ++i)
+		{
+			lastResultVec[i][0] = lastResultVec[i + 1][0];
+			lastResultVec[i][1] = lastResultVec[i + 1][1];
+		}
+		lastResultVec[10][0] = resultVec[0];
+		lastResultVec[10][1] = resultVec[1];
+	}
+
+
+	for (i = 1; i < 12; ++i)
+	{
+		p[i].x = p[i - 1].x + x_ped;
+		p[i].y = p[0].y;
+		q[i].x = q[i - 1].x + x_ped;
+		q[i].y = q[0].y;
+	}
+
+	/*
+	for (int i = 1; i < 12; ++i)
+	{
+		p[i].y = p[0].y - y_ped*lastResultVec[i-1][0];
+		q[i].y = q[0].y - y_ped*lastResultVec[i-1][1];
+	}
+	*/
+
+	for (int i = 1; i < 12; ++i)
+	{
+		if (lastResultVec[i - 1][0] > 0.5)
+		{
+			p[i].y = p[0].y - y_ped;
+			
+		}
+		else
+		{
+			q[i].y = q[0].y - y_ped;
+		}
+	}
+
+
+	for (unsigned i = 0; i < 11; ++i)
+	{
+		m_pRenderTarget->DrawLine(p[i], p[i + 1], m_pBrushGraphic_open, 5.0f);
+		m_pRenderTarget->DrawLine(q[i], q[i + 1], m_pBrushGraphic_close, 5.0f);
+	}
+
+   /*
+	for (unsigned i = 0; i < 11; i += 3)
+	{
+		if (color_vector[cont % 5] == 1)
+		{
+			
+		}
+		else
+		{
+			m_pRenderTarget->DrawLine(p[i], p[i + 1], m_pBrushGraphic_close, 5.0f);
+			m_pRenderTarget->DrawLine(p[i + 1], p[i + 2], m_pBrushGraphic_close, 5.0f);
+		}
+		if (i + 3 < 12)
+		{
+			m_pRenderTarget->DrawLine(p[i + 2], p[i + 3], m_pBrushGraphic_neutro, 5.0f);
+		}
+	}
+*/
+
+	return resultVec;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1034,6 +1132,9 @@ HRESULT CSkeletonBasics::EnsureDirect2DResources()
         m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow, 1.0f), &m_pBrushJointInferred);
         m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), &m_pBrushBoneTracked);
         m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Gray, 1.0f), &m_pBrushBoneInferred);
+
+		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow, 5.0f), &m_pBrushGraphic_open);  //Desenhando Gráfico
+		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 5.0f), &m_pBrushGraphic_close);  //Desenhando Gráfico
     }
 
     return hr;

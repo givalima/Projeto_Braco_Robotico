@@ -75,12 +75,14 @@ public:
 	sf::TcpSocket sock; ///////////////////// sock
 
 	///////////////////////
-	std::vector<float> ClassifyImgNet(sf::TcpSocket &sock, const std::vector<int> &im, cv::Size imSize);
+	std::vector<float> ClassifyImgNet(sf::TcpSocket &sock, const std::vector<int> &im, cv::Size imSize, int count);
 	std::vector<float> vector_classifier;
 
 private:
 	cv::Mat imgToClassify;
 	std::vector<int> imToClassifyInt;
+
+	float lastResultVec[11][2] = { { 0.0 } };
 
     HWND                    m_hWnd;
 
@@ -103,7 +105,13 @@ private:
     ID2D1SolidColorBrush*    m_pBrushJointInferred;
     ID2D1SolidColorBrush*    m_pBrushBoneTracked;
     ID2D1SolidColorBrush*    m_pBrushBoneInferred;
+	ID2D1SolidColorBrush*    m_pBrushGraphic_open;
+	ID2D1SolidColorBrush*    m_pBrushGraphic_close;
+	ID2D1SolidColorBrush*    m_pBrushGraphic_neutro;
     D2D1_POINT_2F            m_Points[NUI_SKELETON_POSITION_COUNT];
+	D2D1_POINT_2F p[12];
+	D2D1_POINT_2F q[12];
+
 
 	HANDLE                  m_hNextDepthFrameEvent;
 	HANDLE                  m_hNextColorFrameEvent;
