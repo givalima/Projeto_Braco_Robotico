@@ -828,24 +828,24 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	char x_ped = 10.0;
 	char y_ped = 50.0;
 
-	if (cont < 11)
+	if (cont < 83)
 	{
 			lastResultVec[cont][0] = resultVec[0];
 			lastResultVec[cont][1] = resultVec[1];
 	}
 	else
 	{
-		for (i = 0; i < 10; ++i)
+		for (i = 0; i < 82; ++i)
 		{
 			lastResultVec[i][0] = lastResultVec[i + 1][0];
 			lastResultVec[i][1] = lastResultVec[i + 1][1];
 		}
-		lastResultVec[10][0] = resultVec[0];
-		lastResultVec[10][1] = resultVec[1];
+		lastResultVec[82][0] = resultVec[0];
+		lastResultVec[82][1] = resultVec[1];
 	}
 
 
-	for (i = 1; i < 12; ++i)
+	for (i = 1; i < 84; ++i)
 	{
 		p[i].x = p[i - 1].x + x_ped;
 		p[i].y = p[0].y;
@@ -861,7 +861,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	}
 	*/
 
-	for (int i = 1; i < 12; ++i)
+	for (int i = 1; i < 84; ++i)
 	{
 		if (lastResultVec[i - 1][0] > 0.5)
 		{
@@ -875,7 +875,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	}
 
 
-	for (unsigned i = 0; i < 11; ++i)
+	for (unsigned i = 0; i < 83; ++i)
 	{
 		m_pRenderTarget->DrawLine(p[i], p[i + 1], m_pBrushGraphic_open, 5.0f);
 		m_pRenderTarget->DrawLine(q[i], q[i + 1], m_pBrushGraphic_close, 5.0f);

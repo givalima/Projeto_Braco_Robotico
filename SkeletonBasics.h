@@ -82,7 +82,7 @@ private:
 	cv::Mat imgToClassify;
 	std::vector<int> imToClassifyInt;
 
-	float lastResultVec[11][2] = { { 0.0 } };
+	float lastResultVec[83][2] = { { 0.0 } };
 
     HWND                    m_hWnd;
 
@@ -109,8 +109,8 @@ private:
 	ID2D1SolidColorBrush*    m_pBrushGraphic_close;
 	ID2D1SolidColorBrush*    m_pBrushGraphic_neutro;
     D2D1_POINT_2F            m_Points[NUI_SKELETON_POSITION_COUNT];
-	D2D1_POINT_2F p[12];
-	D2D1_POINT_2F q[12];
+	D2D1_POINT_2F p[84];
+	D2D1_POINT_2F q[84];
 
 
 	HANDLE                  m_hNextDepthFrameEvent;
