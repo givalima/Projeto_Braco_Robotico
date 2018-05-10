@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 12 12:59:09 2018
-
 @author: Givanildo Lima
 """
 from keras.models import load_model
@@ -9,7 +8,7 @@ import socket
 import struct
 import numpy as np
 import scipy.misc
-
+import cv2 as cv
 
 # %%%%%%%  SERVIDOR  %%%%%%%%
 
@@ -56,13 +55,17 @@ def server():
             # CONVERTE A IMAGEM PARA O FORMATO DO KERAS
             imgint = struct.unpack("2500i", buffer)   #"307200I",buffer)
             
+            img = np.array(imgint).reshape((50, 50))
+            cv.imshow('frame', img)
+            cv.waitKey(1)
+            
             npimg=np.array(imgint).reshape(50,50)
             sciimg = scipy.misc.toimage(npimg)
             imglow=sciimg.resize((50,50))
             npimglow = np.array(imglow).reshape(1,50,50,1)
             # PREDICT DA IMAGEM
             predvec = classifier.predict(npimglow)
-    
+            print(predvec)
             predvecstr = "%f" % predvec[0][0]
             for i in range(1, len(predvec[0])):
                 predvecstr = "%s %f" % (predvecstr,predvec[0][i])

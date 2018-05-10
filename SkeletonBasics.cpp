@@ -661,7 +661,7 @@ void CSkeletonBasics::ProcessSkeleton()
 				{
 					for (int x = 0; x < raio*2; ++x)
 					{
-						uint8_t val = img_binarizada[x + y * (raio * 2)] * 255;
+						uint8_t val = (uint8_t)(img_binarizada[x + y * (raio * 2)] * 255);
 						src.at<uint8_t>(y, x) = val;
 					}
 				}
@@ -678,12 +678,26 @@ void CSkeletonBasics::ProcessSkeleton()
 					}
 				}
 
+				int last_teste = 0; //mao_aberta
+				int teste = 0; //mao_aberta
+
 				vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50}, cont);
 				cont++;
-				std::ofstream file;
+				/*std::ofstream file;
 				file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
+				last_teste = teste;
+				if (vector_classifier[0] > 0.5)
+				{
+					file << "MAO ABERTA: ";
+				}
+				else
+				{
+					file << "MAO FECHADA: ";
+				}
+				
 				file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] ";
-				file.close();
+				file << "\n";
+				file.close();*/
 
 				//writePPMFloat(rgbrunfloat, std::string("imagens/profundidade/profundidade") + std::to_string(cont+500) + std::string(".ppm"), cDepthWidth, cDepthHeight);
 				//writePPMFloat(img_segmentada, std::string("imagens/segmentada/segmentada") + std::to_string(cont+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
@@ -697,10 +711,10 @@ void CSkeletonBasics::ProcessSkeleton()
 				//delete[] img_cortada;
 				//delete[] img_binarizada;
 
-				if (cont > 9999)
+				/*if (cont > 500)
 				{
 					exit(0);
-				}
+				}*/
 			}
 		}
 		
