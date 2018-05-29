@@ -18,7 +18,7 @@ import numpy as np
 classifier = Sequential()
 classifier.add(Conv2D(32, (3, 3), input_shape=(50, 50, 1), activation='relu'))
 classifier.add(MaxPooling2D(pool_size=(2, 2)))
-classifier.add(Conv2D(32, (3, 3), input_shape=(50, 50, 1), activation='relu'))
+classifier.add(Conv2D(32, (3, 3), activation='relu'))
 classifier.add(MaxPooling2D(pool_size=(2, 2)))
 classifier.add(Flatten())
 classifier.add(Dense(units=120, activation='relu'))
