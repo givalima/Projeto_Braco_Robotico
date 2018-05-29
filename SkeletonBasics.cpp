@@ -10,6 +10,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <thread>
 #include <SFML/Network.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
@@ -55,6 +56,7 @@ CSkeletonBasics::CSkeletonBasics() :
 {
     ZeroMemory(m_Points,sizeof(m_Points));
 	m_depthRGBX = new BYTE[cDepthWidth*cDepthHeight*cBytesPerPixel];
+	m_HandImage = new BYTE[cDepthWidth*cDepthHeight*cBytesPerPixel];
 	rgbrunfloat = new float[cDepthWidth*cDepthHeight*cBytesPerPixel];
 	imgToClassify = cv::Mat{ 640, 480, CV_8UC1 };
 	imToClassifyInt.resize(50 * 50);
@@ -410,8 +412,7 @@ HRESULT GetScreenshotFileName(wchar_t *screenshotName, UINT screenshotNameSize)
 }
 
 
-void writePPMFloat(float *image, std::string(ppmfile), int width, int height)
-
+void writePPMFloat(float *image, const std::string &ppmfile, int width, int height)
 {
 	FILE *arq = fopen(ppmfile.c_str(), "w");
 
@@ -435,18 +436,18 @@ void writePPMFloat(float *image, std::string(ppmfile), int width, int height)
 /// </summary>
 void CSkeletonBasics::ProcessSkeleton()
 {
-	////////// ESQUELETO //////////////////////////////
-    NUI_SKELETON_FRAME skeletonFrame = {0};
+////////// ESQUELETO //////////////////////////////
+NUI_SKELETON_FRAME skeletonFrame = { 0 };
 
-    HRESULT hr = m_pNuiSensor->NuiSkeletonGetNextFrame(0, &skeletonFrame);
-    if ( FAILED(hr) )
-    {
-        return;
-    }
+	HRESULT hr = m_pNuiSensor->NuiSkeletonGetNextFrame(0, &skeletonFrame);
+	if (FAILED(hr))
+	{
+		return;
+	}
 
 
-    // smooth out the skeleton data
-    m_pNuiSensor->NuiTransformSmooth(&skeletonFrame, NULL);
+	// smooth out the skeleton data
+	m_pNuiSensor->NuiTransformSmooth(&skeletonFrame, NULL);
 	/////////////////////////////////////////
 
 	// DEPTH DATA //////////////////////////////////
@@ -502,7 +503,7 @@ void CSkeletonBasics::ProcessSkeleton()
 
 			// Note: Using conditionals in this loop could degrade performance.
 			// Consider using a lookup table instead when writing production code.
-			BYTE intensity = static_cast<BYTE>(depth >= minDepth && depth < 2000+minDepth ? ((depth-minDepth) % 2000)/2000.*255.0 : 0);
+			BYTE intensity = static_cast<BYTE>(depth >= minDepth && depth < 2000 + minDepth ? ((depth - minDepth) % 2000) / 2000.*255.0 : 0);
 
 			//Alterei a profundidade de 2500 para 3000
 			float intensityfloat = (depth >= minDepth && depth < 3000 + minDepth ? ((depth - minDepth) % 3000) / 3000.0 : 0);
@@ -511,10 +512,10 @@ void CSkeletonBasics::ProcessSkeleton()
 			rgbrunfloat[posimg++] = intensityfloat;
 			rgbrunfloat[posimg++] = intensityfloat;
 			posimg++;
-			
+
 			// Write out blue byte
 			*(rgbrun++) = intensity;
-			
+
 			// Write out green byte
 			*(rgbrun++) = intensity;
 
@@ -529,7 +530,7 @@ void CSkeletonBasics::ProcessSkeleton()
 			++pBufferRun;
 		}
 
-		
+
 		//Implementação do botão de print
 		if (m_bSaveScreenshot)
 		{
@@ -557,7 +558,7 @@ void CSkeletonBasics::ProcessSkeleton()
 			// toggle off so we don't save a screenshot again next frame
 			m_bSaveScreenshot = false;
 		}
-	
+
 
 		// Endure Direct2D is ready to draw
 		hr = EnsureDirect2DResources();
@@ -575,8 +576,8 @@ void CSkeletonBasics::ProcessSkeleton()
 		int height = rct.bottom;
 
 		D2D1_POINT_2F pos2dMaoDireita;
-		
 
+		bool tem_esqueleto = false;
 		/////////////////// PEGANDO O ESQUELETO /////////////////////////
 		for (int i = 0; i < NUI_SKELETON_COUNT; ++i)
 		{
@@ -592,15 +593,15 @@ void CSkeletonBasics::ProcessSkeleton()
 				DrawSkeleton(skeletonFrame.SkeletonData[i], width, height);
 
 				pos2dMaoDireita = SkeletonToScreen(skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], cDepthWidth, cDepthHeight);
-				
+
 				// EXTRAIR SUBIMAGEM
-				
+
 				float profundidade = skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].z;
-				
+
 				float r = 62.0 / profundidade;
 				int raio = ceil(r);
 				int linha = pos2dMaoDireita.y;
-				int coluna = pos2dMaoDireita.x; 
+				int coluna = pos2dMaoDireita.x;
 
 				float *img_segmentada;
 				float *img_binarizada;
@@ -628,17 +629,18 @@ void CSkeletonBasics::ProcessSkeleton()
 				}
 
 				giva = 0;
+				int black_pixel = 0;
 
 				for (int j = linha - raio; j <= linha + raio; ++j)
 				{
 					for (int k = coluna - raio; k <= coluna + raio; ++k)
 					{
-						if (rgbrunfloat[(j*cDepthWidth + k) * 4] > 0 && rgbrunfloat[(j*cDepthWidth + k) * 4] < rgbrunfloat[(linha*cDepthWidth + coluna) * 4] + 0.05 )
+						if (rgbrunfloat[(j*cDepthWidth + k) * 4] > 0 && rgbrunfloat[(j*cDepthWidth + k) * 4] < rgbrunfloat[(linha*cDepthWidth + coluna) * 4] + 0.05)
 						{
 							img_binarizada[giva] = 0;
 							img_binarizada[giva + 1] = 0;
 							img_binarizada[giva + 2] = 0;
-							
+							++black_pixel;
 						}
 						else
 						{
@@ -650,126 +652,125 @@ void CSkeletonBasics::ProcessSkeleton()
 					}
 				}
 
-					
+				//int black_percent = (black_pixel*100.0) / (sizeof(img_binarizada)*sizeof(float));
+
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4] = 1.0;
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4 + 1] = 0.0;
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4 + 2] = 0.0;
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4 + 3] = 0.0;
 
-				cv::Mat src = cv::Mat{ raio * 2, raio * 2, CV_8UC1,  cv::Scalar(0)};
-				for (int y = 0; y < raio*2; ++y)
+				if (true) //Criar condição para filtrar melhor as imagens
 				{
-					for (int x = 0; x < raio*2; ++x)
+					cv::Mat src = cv::Mat{ raio * 2+1, raio * 2+1, CV_8UC1,  cv::Scalar(0) };
+					for (int y = 0; y < raio * 2+1; ++y)
 					{
-						uint8_t val = (uint8_t)(img_binarizada[x + y * (raio * 2)] * 255);
-						src.at<uint8_t>(y, x) = val;
+						for (int x = 0; x < raio * 2+1; ++x)
+						{
+							uint8_t val = (uint8_t)(img_binarizada[(x + y * (raio * 2+1))*4] * 255);
+							src.at<uint8_t>(y, x) = val;
+						}
 					}
-				}
 
-				cv::Mat dst = cv::Mat{50, 50, CV_8UC1,  cv::Scalar(0)};
-				cv::resize(src, dst, {50, 50});
-				
-				for (int y = 0; y < 50; ++y)
-				{
-					for (int x = 0; x < 50; ++x)
+					cv::Mat dst = cv::Mat{ 50, 50, CV_8UC1,  cv::Scalar(0) };
+					cv::resize(src, dst, { 50, 50 });
+
+					for (int y = 0; y < 50; ++y)
 					{
-						uint8_t val = dst.at<uint8_t>(y, x);
-						imToClassifyInt[x + y * 50] = val;
+						for (int x = 0; x < 50; ++x)
+						{
+							uint8_t val = dst.at<uint8_t>(y, x);
+							imToClassifyInt[x + y * 50] = val;
+						}
 					}
+
+
+					vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{ 50, 50 }, cont);
+					cont++;
+					tem_esqueleto = true;
 				}
 
-				int last_teste = 0; //mao_aberta
-				int teste = 0; //mao_aberta
+				/*
+				int acress = 15001; //15K IMAGENS COLETADAS
+				char * str = "mao_aberta";
 
-				vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50}, cont);
-				cont++;
-				/*std::ofstream file;
-				file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
-				last_teste = teste;
-				if (vector_classifier[0] > 0.5)
-				{
-					file << "MAO ABERTA: ";
-				}
-				else
-				{
-					file << "MAO FECHADA: ";
-				}
-				
-				file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] ";
-				file << "\n";
-				file.close();*/
+				writePPMFloat(rgbrunfloat, std::string("C://Users//Givanildo Lima//Documents//imagens//profundidade//") + str + std::string("//profundidade") + std::to_string(cont + acress) + std::string(".ppm"), cDepthWidth, cDepthHeight);
+				writePPMFloat(img_segmentada, std::string("C://Users//Givanildo Lima//Documents//imagens//segmentada//") + str + std::string("//segmentada") + std::to_string(cont + acress) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
+				writePPMFloat(img_binarizada, std::string("C://Users//Givanildo Lima//Documents//imagens//binarizada//") + str + std::string("//binarizada") + std::to_string(cont + acress) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
 
-				//writePPMFloat(rgbrunfloat, std::string("imagens/profundidade/profundidade") + std::to_string(cont+500) + std::string(".ppm"), cDepthWidth, cDepthHeight);
-				//writePPMFloat(img_segmentada, std::string("imagens/segmentada/segmentada") + std::to_string(cont+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
-				//writePPMFloat(img_binarizada, std::string("imagens/binarizada/binarizada") + std::to_string(cont+500) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
-				
-				//ProcessColor(count+500);
+				ProcessColor(cont + acress, str);
+				++cont;
 
-				//writePPMFloat(img_cortada, "img_cortada.ppm", 2 * raio + 1, 2 * raio + 1);
-	     		//writePPMFloat(rgbrunfloat, "img_inteira.ppm", cDepthWidth, cDepthHeight);
-
-				//delete[] img_cortada;
-				//delete[] img_binarizada;
-
-				/*if (cont > 500)
+				if (cont > 999)
 				{
 					exit(0);
-				}*/
+				}
+				*/
 			}
 		}
-		
-		// Draw the data with Direct2D
+
+		if (tem_esqueleto)
+		{
+			for (int y = 0; y < 100; ++y)
+			{
+				for (int x = 0; x < 100; ++x)
+				{
+					int pos = x + 640 * y;
+					m_depthRGBX[pos * 4] = m_depthRGBX[pos * 4 + 1] = m_depthRGBX[pos * 4 + 2] = m_depthRGBX[pos * 4 + 3] = imToClassifyInt[x/2  + (y/2 ) * 50];
+				}
+			}
+		}
+
 		m_pDrawDepth->Draw(m_depthRGBX, cDepthWidth * cDepthHeight * cBytesPerPixel);
-	}
 
 
 	// We're done with the texture so unlock it
-	pTexture->UnlockRect(0);
+		pTexture->UnlockRect(0);
 
-	pTexture->Release();
+		pTexture->Release();
 
-ReleaseFrame:
-	// Release the frame
-	m_pNuiSensor->NuiImageStreamReleaseFrame(m_pDepthStreamHandle, &imageFrame);
-
-
-	
-	/*
-    for (int i = 0 ; i < NUI_SKELETON_COUNT; ++i)
-    {
-        NUI_SKELETON_TRACKING_STATE trackingState = skeletonFrame.SkeletonData[i].eTrackingState;
-
-        if (NUI_SKELETON_TRACKED == trackingState)
-        {
-            // We're tracking the skeleton, draw it
-            DrawSkeleton(skeletonFrame.SkeletonData[i], width, height);
-			
-			pos2dMaoDireita = SkeletonToScreen(skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], width, height);
+	ReleaseFrame:
+		// Release the frame
+		m_pNuiSensor->NuiImageStreamReleaseFrame(m_pDepthStreamHandle, &imageFrame);
 
 
-        }
-        else if (NUI_SKELETON_POSITION_ONLY == trackingState)
-        {
-            // we've only received the center point of the skeleton, draw that
-            D2D1_ELLIPSE ellipse = D2D1::Ellipse(
-                SkeletonToScreen(skeletonFrame.SkeletonData[i].Position, width, height),
-                g_JointThickness,
-                g_JointThickness
-                );
 
-            m_pRenderTarget->DrawEllipse(ellipse, m_pBrushJointTracked);
-        }
-    }
-	*/
-    hr = m_pRenderTarget->EndDraw();
+		/*
+		for (int i = 0 ; i < NUI_SKELETON_COUNT; ++i)
+		{
+			NUI_SKELETON_TRACKING_STATE trackingState = skeletonFrame.SkeletonData[i].eTrackingState;
 
-    // Device lost, need to recreate the render target
-    // We'll dispose it now and retry drawing
-    if (D2DERR_RECREATE_TARGET == hr)
-    {
-        hr = S_OK;
-        DiscardDirect2DResources();
-    }
+			if (NUI_SKELETON_TRACKED == trackingState)
+			{
+				// We're tracking the skeleton, draw it
+				DrawSkeleton(skeletonFrame.SkeletonData[i], width, height);
+
+				pos2dMaoDireita = SkeletonToScreen(skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT], width, height);
+
+
+			}
+			else if (NUI_SKELETON_POSITION_ONLY == trackingState)
+			{
+				// we've only received the center point of the skeleton, draw that
+				D2D1_ELLIPSE ellipse = D2D1::Ellipse(
+					SkeletonToScreen(skeletonFrame.SkeletonData[i].Position, width, height),
+					g_JointThickness,
+					g_JointThickness
+					);
+
+				m_pRenderTarget->DrawEllipse(ellipse, m_pBrushJointTracked);
+			}
+		}
+		*/
+		hr = m_pRenderTarget->EndDraw();
+
+		// Device lost, need to recreate the render target
+		// We'll dispose it now and retry drawing
+		if (D2DERR_RECREATE_TARGET == hr)
+		{
+			hr = S_OK;
+			DiscardDirect2DResources();
+		}
+	}
 }
 
 ////////////////////////////////////// CLASSIFICADOR ////////////////////////////////////////////////
@@ -806,36 +807,6 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 		resultVec.push_back(a);
 	}
 
-/*
-	if (cont < 5)
-	{
-		if (resultVec[0] > 0.5)
-		{
-			color_vector[cont] = 1; //Mão Aberta
-		}
-		else
-		{
-			color_vector[cont] = 0; //Mão Aberta
-		}
-	}
-	else
-	{
-		for (i = 0; i < 3; ++i)
-		{
-			color_vector[i] = color_vector[i + 1];
-		}
-		if (resultVec[0] > 0.5)
-		{
-			color_vector[4] = 1; //Mão Aberta
-		}
-		else
-		{
-			color_vector[4] = 0; //Mão Aberta
-		}
-	}
-	
-	*/
-
 	p[0] = { 0.0, 620.0 }; //Mão Aberta
 	q[0] = { 0.0, 620.0 }; //Mão Fechada
 
@@ -849,7 +820,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	}
 	else
 	{
-		for (i = 0; i < 82; ++i)
+		for (int i = 0; i < 82; ++i)
 		{
 			lastResultVec[i][0] = lastResultVec[i + 1][0];
 			lastResultVec[i][1] = lastResultVec[i + 1][1];
@@ -859,7 +830,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	}
 
 
-	for (i = 1; i < 84; ++i)
+	for (int i = 1; i < 84; ++i)
 	{
 		p[i].x = p[i - 1].x + x_ped;
 		p[i].y = p[0].y;
@@ -875,6 +846,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	}
 	*/
 
+	
 	for (int i = 1; i < 84; ++i)
 	{
 		if (lastResultVec[i - 1][0] > 0.5)
@@ -895,31 +867,10 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 		m_pRenderTarget->DrawLine(q[i], q[i + 1], m_pBrushGraphic_close, 5.0f);
 	}
 
-   /*
-	for (unsigned i = 0; i < 11; i += 3)
-	{
-		if (color_vector[cont % 5] == 1)
-		{
-			
-		}
-		else
-		{
-			m_pRenderTarget->DrawLine(p[i], p[i + 1], m_pBrushGraphic_close, 5.0f);
-			m_pRenderTarget->DrawLine(p[i + 1], p[i + 2], m_pBrushGraphic_close, 5.0f);
-		}
-		if (i + 3 < 12)
-		{
-			m_pRenderTarget->DrawLine(p[i + 2], p[i + 3], m_pBrushGraphic_neutro, 5.0f);
-		}
-	}
-*/
-
 	return resultVec;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-
-void CSkeletonBasics::ProcessColor(int contador)
+void CSkeletonBasics::ProcessColor(int contador, char* tipo)
 {
     HRESULT hr;
     NUI_IMAGE_FRAME imageFrame;
@@ -952,7 +903,7 @@ void CSkeletonBasics::ProcessColor(int contador)
 		 
 	    //GetScreenshotFileName(screenshotPath, _countof(screenshotPath));
 		
-		swprintf_s(CAMINHO, L"imagens/rgb/rgb %d.bmp", contador);
+		swprintf_s(CAMINHO, L"C://Users//Givanildo Lima//Documents//imagens//rgb//mao_aberta//rgb %d.bmp", contador);
 		
 		//float myFloat = System.BitConverter.ToSingle(static_cast<BYTE *>(LockedRect.pBits), 0);
 		
@@ -1160,7 +1111,6 @@ HRESULT CSkeletonBasics::EnsureDirect2DResources()
 void CSkeletonBasics::DiscardDirect2DResources( )
 {
     SafeRelease(m_pRenderTarget);
-
     SafeRelease(m_pBrushJointTracked);
     SafeRelease(m_pBrushJointInferred);
     SafeRelease(m_pBrushBoneTracked);

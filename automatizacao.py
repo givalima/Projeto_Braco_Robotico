@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import time
 import shutil
 import cv2 as cv
 

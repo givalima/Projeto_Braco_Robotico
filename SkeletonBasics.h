@@ -94,6 +94,7 @@ private:
     INuiSensor*             m_pNuiSensor;
 
 	BYTE*                   m_depthRGBX;
+	BYTE*					m_HandImage;
 	float*                   m_depthRGBXfloat;
 
 	HANDLE                  m_pDepthStreamHandle;
@@ -142,7 +143,7 @@ private:
     /// Handle new skeleton data
     /// </summary>
     void                    ProcessSkeleton();
-	void					ProcessColor(int contador);
+	void					ProcessColor(int contador, char* tipo);
 
     /// <summary>
     /// Ensure necessary Direct2d resources are created

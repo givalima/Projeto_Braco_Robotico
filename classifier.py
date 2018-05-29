@@ -12,12 +12,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import Flatten
 from keras.layers import Dense
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import load_model
-
-import socket
-import struct
 import numpy as np
-import scipy.misc
 
 # Initialising the CNN
 classifier = Sequential()
@@ -75,63 +70,17 @@ print("Parametros atualizados")
 
 # %%%%%%  MATRIZ DE CONFUSÃO  %%%%%%%
 							 
-import numpy as np
-
 cut_pos = int(len(test_set.classes) / len(test_set.class_indices))
 
 w, h = 2, 2;
 mat = [[0 for x in range(w)] for y in range(h)] 
 k = 0
-for i in range(len(score)):
+for i in range(0, 69):
     k = np.argmax(score[i])
-    mat[int(i / cut_pos)][k] += 1
+    mat[0][k] += 1
+
+for i in range(69, 133):
+    k = np.argmax(score[i])
+    mat[1][k] += 1
 
 print(mat)
-
-# %%%%%%%  SERVIDOR  %%%%%%%%%
-def server():
-
-	TCP_IP = '127.0.0.1'
-	TCP_PORT = 31000
-	BUFFER_SIZE = 50*3
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind((TCP_IP, TCP_PORT))
-	s.listen(1)
-	print('Waiting connection…')
-	conn, addr = s.accept() #CONECTOU
-	print('Connection address:', addr)
-
-
-	while 1: # WHILE INFINITO PARA SEMPRE ESTAR RECEBENDO IMAGENS
-		current_size = 0
-		size = 50*50*4 # width * heigth * sizeof(unsigned int) #1228800
-		buffer = b""
-
-		contLines = 0
-
-		while current_size < size: #WHILE PARA RECEBER UMA IMAGEM, UMA LINHA DE CADA VEZ
-			data = conn.recv(BUFFER_SIZE)
-			#print(len(data))
-			if not data:
-				break
-			if len(data) + current_size > size:
-				data = data[:size-current_size]
-			#conn.send('ok'.encode())
-			buffer += data
-			current_size += len(data)
-
-		# CONVERTE A IMAGEM PARA O FORMATO DO KERAS
-		imgint=struct.unpack("2500I", buffer)   #"307200I",buffer)
-
-		npimg=np.array(imgint).reshape(50,50)
-		sciimg = scipy.misc.toimage(npimg)
-		imglow=sciimg.resize((50,50))
-		npimglow = np.array(imglow).reshape(1,50,50,1)
-		# PREDICT DA IMAGEM
-		predvec = classifier.predict(npimglow)
-
-		predvecstr = "%f" % predvec[0][0]
-		for i in range(1, len(predvec[0])):
-			predvecstr = "%s %f" % (predvecstr,predvec[0][i])
-		conn.send(predvecstr.encode())
-#server()
