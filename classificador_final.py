@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+1# -*- coding: utf-8 -*-
 """
 Created on Tue May 29 21:01:03 2018
 
-@author: givae
+@author: Givanildo Lima
 """
 
 # Importing the Keras libraries and packages
@@ -20,16 +20,16 @@ import numpy as np
 classifier = Sequential()
 
 print("Digite a quantidade de Camadas Convolucionais:")
-conv = input()
+conv = int(input())
 
 if(conv == 1):
     print("Digite o tamanho do filtro:")
-    fil = input()
+    fil = int(input())
     print("Digite a quantidade de camadas densas:")
-    qntd_dense = input()
+    qntd_dense = int(input())
     if(qntd_dense == 1):
         print("Digite a quantidade de neurônios da camada:")
-        neural = input()
+        neural = int(input())
         classifier.add(Conv2D(32, (fil, fil), input_shape=(50, 50, 1), activation='relu'))
         classifier.add(MaxPooling2D(pool_size=(2, 2)))
         classifier.add(Flatten())
@@ -37,9 +37,9 @@ if(conv == 1):
         
     if(qntd_dense == 2):
         print("Digite a quantidade de neurônios da camada 1:")
-        neural_1 = input()
+        neural_1 = int(input())
         print("Digite a quantidade de neurônios da camada 2:")
-        neural_2 = input()
+        neural_2 = int(input())
         classifier.add(Conv2D(32, (fil, fil), input_shape=(50, 50, 1), activation='relu'))
         classifier.add(MaxPooling2D(pool_size=(2, 2)))
         classifier.add(Flatten())
@@ -48,14 +48,14 @@ if(conv == 1):
         
 if(conv == 2):
     print("Digite o tamanho do filtro 1:")
-    fil_1 = input()
+    fil_1 = int(input())
     print("Digite o tamanho do filtro 2:")
-    fil_2 = input()
+    fil_2 = int(input())
     print("Digite a quantidade de camadas densas:")
-    qntd_dense = input()
+    qntd_dense = int(input())
     if(qntd_dense == 1):
         print("Digite a quantidade de neurônios da camada:")
-        neural = input()
+        neural = int(input())
         classifier.add(Conv2D(32, (fil_1, fil_1), input_shape=(50, 50, 1), activation='relu'))
         classifier.add(MaxPooling2D(pool_size=(2, 2)))
         classifier.add(Conv2D(32, (fil_2, fil_2), activation='relu'))
@@ -65,9 +65,9 @@ if(conv == 2):
           
     if(qntd_dense == 2):
         print("Digite a quantidade de neurônios da camada 1:")
-        neural_1 = input()
+        neural_1 = int(input())
         print("Digite a quantidade de neurônios da camada 2:")
-        neural_2 = input()
+        neural_2 = int(input())
         classifier.add(Conv2D(32, (fil_1, fil_1), input_shape=(50, 50, 1), activation='relu'))
         classifier.add(MaxPooling2D(pool_size=(2, 2)))
         classifier.add(Conv2D(32, (fil_2, fil_2), activation='relu'))
