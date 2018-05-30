@@ -50,5 +50,3 @@ for i in lista_fechada:
        fechada += 1
        
 print("\nABERTA:", aberta, "FECHADA:", fechada)
-        
-#cv2.destroyAllWindows()
