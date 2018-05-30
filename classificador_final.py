@@ -123,16 +123,14 @@ print("Parametros atualizados")
 
 # %%%%%%  MATRIZ DE CONFUSÃO  %%%%%%%
 							 
-cut_pos = int(len(test_set.classes) / len(test_set.class_indices))
-
 w, h = 2, 2;
 mat = [[0 for x in range(w)] for y in range(h)] 
 k = 0
-for i in range(0, 69):
+for i in range(0, 1390):
     k = np.argmax(score[i])
     mat[0][k] += 1
 
-for i in range(69, 133):
+for i in range(1390, 2758):
     k = np.argmax(score[i])
     mat[1][k] += 1
 
