@@ -53,7 +53,6 @@ def server():
                 open_conn = True
                 break
            
-            #print(len(buffer))
             # CONVERTE A IMAGEM PARA O FORMATO DO KERAS
             imgint = struct.unpack("2500i", buffer)   #"307200I",buffer)
             
