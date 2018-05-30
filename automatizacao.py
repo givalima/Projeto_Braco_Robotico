@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 12 12:59:09 2018
+@author: Givanildo Lima
+"""
+
 import os
 import numpy as np
 import shutil
