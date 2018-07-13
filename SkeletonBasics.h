@@ -143,7 +143,7 @@ private:
     /// Handle new skeleton data
     /// </summary>
     void                    ProcessSkeleton();
-	void					ProcessColor(int contador, char* tipo);
+	void					ProcessColor(int contador);
 
     /// <summary>
     /// Ensure necessary Direct2d resources are created

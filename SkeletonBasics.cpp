@@ -186,7 +186,6 @@ void CSkeletonBasics::Update()
 	{
 		ProcessColor(count);
 	}*/
-
 //	m_pDrawDepth->DetectHandRight();
 }
 
@@ -232,6 +231,8 @@ LRESULT CALLBACK CSkeletonBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 {
     switch (message)
     {
+	case WM_ERASEBKGND:
+		return 1;
     case WM_INITDIALOG:
         {
             // Bind application window handle
@@ -597,6 +598,8 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 				// EXTRAIR SUBIMAGEM
 
 				float profundidade = skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].z;
+				float horizontal = skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].x;
+				float vertical = skeletonFrame.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].y;
 
 				float r = 62.0 / profundidade;
 				int raio = ceil(r);
@@ -659,7 +662,7 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4 + 2] = 0.0;
 				rgbrunfloat[(linha*cDepthWidth + coluna) * 4 + 3] = 0.0;
 
-				if (true) //Criar condição para filtrar melhor as imagens
+				if (true)
 				{
 					cv::Mat src = cv::Mat{ raio * 2+1, raio * 2+1, CV_8UC1,  cv::Scalar(0) };
 					for (int y = 0; y < raio * 2+1; ++y)
@@ -685,8 +688,19 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 
 
 					vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{ 50, 50 }, cont);
+					std::ofstream file;
+					file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
+					file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] - (" << horizontal << "," << vertical << ", " << profundidade << ")\n";
+					file.close();
 					cont++;
 					tem_esqueleto = true;
+				}
+
+				ProcessColor(cont);
+				//writePPMFloat(rgbrunfloat, std::string("C://Users//Givanildo Lima//Documents//teste//profundidade//profundidade") + std::to_string(cont) + std::string(".ppm"), cDepthWidth, cDepthHeight);
+				if (cont > 1000)
+				{
+					exit(0);
 				}
 
 				/*
@@ -697,7 +711,7 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 				writePPMFloat(img_segmentada, std::string("C://Users//Givanildo Lima//Documents//imagens//segmentada//") + str + std::string("//segmentada") + std::to_string(cont + acress) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
 				writePPMFloat(img_binarizada, std::string("C://Users//Givanildo Lima//Documents//imagens//binarizada//") + str + std::string("//binarizada") + std::to_string(cont + acress) + std::string(".ppm"), 2 * raio + 1, 2 * raio + 1);
 
-				ProcessColor(cont + acress, str);
+				ProcessColor(cont + acress);
 				++cont;
 
 				if (cont > 999)
@@ -733,8 +747,6 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 		m_pNuiSensor->NuiImageStreamReleaseFrame(m_pDepthStreamHandle, &imageFrame);
 
 
-
-		/*
 		for (int i = 0 ; i < NUI_SKELETON_COUNT; ++i)
 		{
 			NUI_SKELETON_TRACKING_STATE trackingState = skeletonFrame.SkeletonData[i].eTrackingState;
@@ -760,7 +772,6 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 				m_pRenderTarget->DrawEllipse(ellipse, m_pBrushJointTracked);
 			}
 		}
-		*/
 		hr = m_pRenderTarget->EndDraw();
 
 		// Device lost, need to recreate the render target
@@ -870,7 +881,7 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
 	return resultVec;
 }
 
-void CSkeletonBasics::ProcessColor(int contador, char* tipo)
+void CSkeletonBasics::ProcessColor(int contador)
 {
     HRESULT hr;
     NUI_IMAGE_FRAME imageFrame;
@@ -903,7 +914,9 @@ void CSkeletonBasics::ProcessColor(int contador, char* tipo)
 		 
 	    //GetScreenshotFileName(screenshotPath, _countof(screenshotPath));
 		
-		swprintf_s(CAMINHO, L"C://Users//Givanildo Lima//Documents//imagens//rgb//mao_aberta//rgb %d.bmp", contador);
+		swprintf_s(CAMINHO, L"C://Users//Givanildo Lima//Documents//teste//rgb//rgb %d.bmp", contador);
+
+		//swprintf_s(CAMINHO, L"C://Users//Givanildo Lima//Documents//imagens//rgb//mao_aberta//rgb %d.bmp", contador);
 		
 		//float myFloat = System.BitConverter.ToSingle(static_cast<BYTE *>(LockedRect.pBits), 0);
 		
