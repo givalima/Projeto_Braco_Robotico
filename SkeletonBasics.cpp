@@ -686,8 +686,39 @@ NUI_SKELETON_FRAME skeletonFrame = { 0 };
 						}
 					}
 
-
+					int avaliate = 0;
+					float buffer[5][2] = { {0.0} };
+					int size_buffer = 0;
 					vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{ 50, 50 }, cont);
+					if (size_buffer < 5)
+					{
+						buffer[size_buffer][0] = vector_classifier[0];
+						buffer[size_buffer][1] = vector_classifier[1];
+					}
+					else
+					{
+						for (i = 0; i < 5; ++i)
+						{
+							if (vector_classifier[0] == buffer[i][0] && vector_classifier[1] == buffer[i][1]) 
+							{
+								avaliate = 1;
+							}
+							else
+							{
+								avaliate = 0;
+								break;
+							}
+						}
+						if (avaliate)
+						{
+							//Passar pro RoboDK o vector_classifier
+						}
+						else
+						{
+							//std::vector<float> result = (buffer[4][0], buffer[4][0]);
+							//Passar pro RoboDK o buffer[4]
+						}
+					}
 					std::ofstream file;
 					file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
 					file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] - (" << horizontal << "," << vertical << ", " << profundidade << ")\n";
