@@ -785,8 +785,8 @@ void CSkeletonBasics::ProcessSkeleton()
           /*std::ofstream file;
           file.open("C:/Users/Givanildo Lima/Documents/results.txt", std::ios::app | std::ios::out);
           file << "[" << vector_classifier[0] << ", " << vector_classifier[1] << "] - (" << horizontal << "," << vertical << ", " << profundidade << ")\n";
-          file.close();
-          cont++;*/
+          file.close();*/
+          cont++;
           tem_esqueleto = true;
         }
 
