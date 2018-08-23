@@ -752,7 +752,8 @@ void CSkeletonBasics::ProcessSkeleton()
           int avaliate = 0;
           float buffer[5][2] = {{0.0}};
           int size_buffer = 0;
-          vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50}, cont);
+		  glm::vec3 spherical;
+          vector_classifier = ClassifyImgNet(sock, imToClassifyInt, cv::Size{50, 50}, cont, spherical);
           if(size_buffer < 5)
           {
             buffer[size_buffer][0] = vector_classifier[0];
@@ -880,7 +881,11 @@ void CSkeletonBasics::ProcessSkeleton()
 
 ////////////////////////////////////// CLASSIFICADOR ////////////////////////////////////////////////
 
-std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const std::vector<int>& im, cv::Size imSize, int cont)
+std::vector<float> 
+CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, 
+                                const std::vector<int>& im,
+								cv::Size imSize, int cont, 
+								const glm::vec3 spherical)
 {
   size_t reciLen;
   char predictBuff[50000];
@@ -899,6 +904,8 @@ std::vector<float> CSkeletonBasics::ClassifyImgNet(sf::TcpSocket &sock, const st
   predictBuff[0] = '\0';
 
   sock.receive(predictBuff, sizeof(char) * 50000, reciLen);
+  
+  // add sock.send to transfer spherical to python
 
   predictBuff[reciLen] = '\0';
 
