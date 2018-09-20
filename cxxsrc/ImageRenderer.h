@@ -1,3 +1,8 @@
+﻿//------------------------------------------------------------------------------
+// <copyright file="ImageRenderer.h" company="Microsoft">
+//     Copyright (c) Microsoft Corporation.  All rights reserved.
+// </copyright>
+//------------------------------------------------------------------------------
 
 // Manages the drawing of image data
 

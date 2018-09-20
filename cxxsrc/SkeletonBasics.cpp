@@ -57,41 +57,47 @@ convertToSphericalCoords(NUI_SKELETON_DATA *users, unsigned useridx) {
     skeletonPosition[NUI_SKELETON_POSITION_SHOULDER_LEFT];
   Vector4 rightSholderNite =
     skeletonPosition[NUI_SKELETON_POSITION_SHOULDER_RIGHT];
-  Vector4 rightHipNite =
-    skeletonPosition[NUI_SKELETON_POSITION_HIP_RIGHT];
+  Vector4 centerSholderNite =
+    skeletonPosition[NUI_SKELETON_POSITION_SHOULDER_CENTER];
+  Vector4 centerHipNite =
+	  skeletonPosition[NUI_SKELETON_POSITION_SPINE];
   Vector4 rightHandNite =
     skeletonPosition[NUI_SKELETON_POSITION_HAND_RIGHT];
 
   glm::vec3 clavice{leftSholderNite.x - rightSholderNite.x,
                     leftSholderNite.y - rightSholderNite.y,
                     leftSholderNite.z - rightSholderNite.z};
-  glm::vec3 torso{rightHipNite.x - rightSholderNite.x,
-                  rightHipNite.y - rightSholderNite.y,
-                  rightHipNite.z - rightSholderNite.z};
+  clavice *= -1.f;
+  glm::vec3 vertical{centerSholderNite.x - centerHipNite.x,
+					  centerSholderNite.y - centerHipNite.y,
+         			  centerSholderNite.z - centerHipNite.z};
 
   glm::vec3 rightArm{rightHandNite.x - rightSholderNite.x,
                      rightHandNite.y - rightSholderNite.y,
                      rightHandNite.z - rightSholderNite.z};
 
   clavice = glm::normalize(clavice);
-  torso = glm::normalize(torso);
+  vertical = glm::normalize(vertical);
   rightArm = glm::normalize(rightArm);
 
-  glm::vec3 tcNorm = glm::cross(clavice, torso);
+  glm::vec3 tcNorm = -glm::cross(clavice, vertical);
 
   float raTDot = glm::dot(tcNorm, rightArm);
-  float theta = glm::acos(raTDot / (glm::length(tcNorm) *
-                          glm::length(rightArm)));
+  float theta = glm::acos(raTDot);
 
   glm::vec3 projRAinTC = rightArm -
                          ((raTDot / glm::dot(tcNorm, tcNorm)) * tcNorm);
-  //projRAinTC = glm::normalize(projRAinTC);
+  projRAinTC = glm::normalize(projRAinTC);
 
   float phi = glm::acos(glm::dot(projRAinTC, clavice) /
                        (glm::length(projRAinTC) * glm::length(clavice)));
+  if(projRAinTC.y < 0)
+	  phi = -phi;
 
-  return glm::vec3{glm::cos(theta), glm::sin(theta) * glm::cos(phi), 
-                        glm::sin(theta) * glm::sin(phi)};
+  return glm::vec3{glm::sin(theta) * glm::cos(phi),
+                   glm::sin(theta) * glm::sin(phi), glm::cos(theta)};
+  /*return glm::vec3{theta,
+				   phi, 0};*/
 } 
 
 /// <summary>
@@ -607,51 +613,81 @@ void SkeletonRetriver::ProcessSkeleton()
 
 #define nomeEscroto eSkeletonPositionTrackingState
       if(skFr.SkeletonData[i]
-                      .nomeEscroto[NUI_SKELETON_POSITION_HAND_RIGHT] != 
-          NUI_SKELETON_POSITION_TRACKED) {
+         .nomeEscroto[NUI_SKELETON_POSITION_HAND_RIGHT] !=
+         NUI_SKELETON_POSITION_TRACKED) {
         continue;
       }
 #undef nomeEscroto
 
       glm::vec3 spherical = convertToSphericalCoords(skFr.SkeletonData, i);
-      glm::vec3 arm{
+      /*glm::vec3 arm{
         (float)(skFr.SkeletonData[i]
                     .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].x),
         (float)(skFr.SkeletonData[i]
                     .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].y),
         (float)(skFr.SkeletonData[i]
                     .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT].z)};
-      
-      sock.send(&spherical.x, sizeof(float));
-      sock.send(&spherical.y, sizeof(float));
-      sock.send(&spherical.z, sizeof(float));
+                    */
+      sock.send(&spherical.x, 3 * sizeof(float));
 
-      sock.send(&arm.x, sizeof(float));
-      sock.send(&arm.y, sizeof(float));
-      sock.send(&arm.z, sizeof(float));
-      
+     /* D2D1_POINT_2F orig = SkeletonToScreen(skFr.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT], cDepthWidth, cDepthHeight);
+      Vector4 leftSholderNite =
+          skFr.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_LEFT];
+      Vector4 rightSholderNite =
+          skFr.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_SHOULDER_RIGHT];
+      Vector4 rightHipNite =
+          skFr.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HIP_RIGHT];
+      Vector4 rightHandNite =
+          skFr.SkeletonData[i].SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT];
 
-      pos2dMaoDireita = 
+      Vector4 clavice{leftSholderNite.x - rightSholderNite.x,
+                      leftSholderNite.y - rightSholderNite.y,
+                      leftSholderNite.z - rightSholderNite.z};
+
+      Vector4 torso{rightHipNite.x - rightSholderNite.x,
+                    rightHipNite.y - rightSholderNite.y,
+                    rightHipNite.z - rightSholderNite.z};
+
+       Vector4 rightArm{rightHandNite.x - rightSholderNite.x,
+                        rightHandNite.y - rightSholderNite.y,
+                        rightHandNite.z - rightSholderNite.z};
+
+      m_pRenderTarget->DrawLine(orig,
+                                SkeletonToScreen(rightArm, cDepthWidth, cDepthHeight),
+                                m_pBrushBoneTracked, g_TrackedBoneThickness);
+
+      m_pRenderTarget->DrawLine(orig,
+                                SkeletonToScreen(torso, cDepthWidth, cDepthHeight),
+                                m_pBrushBoneTracked, g_TrackedBoneThickness);
+
+      m_pRenderTarget->DrawLine(orig,
+                                SkeletonToScreen(clavice, cDepthWidth, cDepthHeight),
+                                m_pBrushBoneTracked, g_TrackedBoneThickness);*/
+      //sock.send(&arm.x, 3 * sizeof(float));
+
+
+      pos2dMaoDireita =
         SkeletonToScreen(skFr.SkeletonData[i]
-                             .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT],
+                         .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT],
                          cDepthWidth, cDepthHeight);
 
       // EXTRAIR SUBIMAGEM
       float enviar = 0;
-      if(!cutBoundingBox(pos2dMaoDireita,
-                         skFr.SkeletonData[i]
-                             .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT])) {
+      if(cutBoundingBox(pos2dMaoDireita,
+         skFr.SkeletonData[i]
+         .SkeletonPositions[NUI_SKELETON_POSITION_HAND_RIGHT])) {
         // não vou conseguir enviar
         enviar = -1;
         sock.send(&enviar, sizeof(float));
-        continue;
       }
-
-      // vou conseguir enviar
-      enviar = 1;
-      sock.send(&enviar, sizeof(float));
-      predVec = ClassifyImgNet(sock, im50x50Cut, cv::Size{50, 50});
-      cont++;
+      else {
+       // vou conseguir enviar
+        //enviar = 1;
+        enviar = -1;
+        sock.send(&enviar, sizeof(float));
+        //predVec = ClassifyImgNet(sock, im50x50Cut, cv::Size{50, 50});
+        //cont++;
+      }
     }
     else if(NUI_SKELETON_POSITION_ONLY == trackingState)
     {
@@ -1020,7 +1056,8 @@ void SkeletonRetriver::DrawBone(const NUI_SKELETON_DATA & skel, NUI_SKELETON_POS
 /// <param name="width">width (in pixels) of output buffer</param>
 /// <param name="height">height (in pixels) of output buffer</param>
 /// <returns>point in screen-space</returns>
-D2D1_POINT_2F SkeletonRetriver::SkeletonToScreen(Vector4 skeletonPoint, int width, int height)
+D2D1_POINT_2F SkeletonRetriver::SkeletonToScreen(Vector4 skeletonPoint, 
+                                                 int width, int height)
 {
   LONG x, y;
   USHORT depth;
