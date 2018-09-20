@@ -95,7 +95,7 @@ CSkeletonBasics::~CSkeletonBasics()
 	m_pDrawColor = NULL;
 
 }
-
+ 
 /// <summary>
 /// Creates the main window and begins processing
 /// </summary>
